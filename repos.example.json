@@ -1,0 +1,5 @@
+{
+  "repositories": ["/path/to/local/git/repo"],
+  "emails": ["you-email@email.com"],
+  "remote": "git@github.com:Georift/<your repo>.git"
+}
