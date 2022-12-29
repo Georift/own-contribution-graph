@@ -1,3 +1,11 @@
+# NPM login token
+.npmrc
+
 node_modules
 test-git-repo
 repos.json
+
+dist
+
+# Result of `npm pack`
+own-contribution-graph-*.tgz

@@ -1,14 +1,33 @@
 {
 	"name": "own-contribution-graph",
 	"version": "1.0.0",
-	"description": "",
+	"description": "Replicate contributions from external git hosts to GitHub",
 	"main": "dist/index.js",
-	"scripts": {
-		"start": "ts-node index.ts",
-		"test": "echo \"Error: no test specified\" && exit 1"
+	"files": [
+		"dist/*",
+		"!dist/*.map"
+	],
+	"bin": {
+		"owncontributiongraph": "dist/index.js"
 	},
-	"keywords": [],
-	"author": "",
+	"scripts": {
+		"start": "ts-node src/index.ts",
+		"build": "tsc && sed -i '1s|#!/usr/bin/env ts-node|#!/usr/bin/env node|' dist/index.js",
+		"prepack": "npm run build",
+		"release": "git push && git push --tags && npm ci && npm publish",
+		"release-major": "npm version major && npm run release",
+		"release-minor": "npm version minor && npm run release",
+		"release-patch": "npm version patch && npm run release"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/Georift/own-contribution-graph"
+	},
+	"keywords": [
+		"git",
+		"contribution"
+	],
+	"author": "Georift",
 	"license": "ISC",
 	"dependencies": {
 		"ramda": "^0.28.0",
