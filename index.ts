@@ -1,8 +1,9 @@
+import { execSync } from "child_process";
+import { mkdirSync, readFileSync, rmSync } from "fs";
 import path from "path";
-import { rmSync, mkdirSync, readFileSync } from "fs";
+import * as R from "ramda";
 import { simpleGit } from "simple-git";
 import { getCommitList } from "./getCommitList";
-import * as R from "ramda";
 
 const { repositories, emails, remote } = JSON.parse(
   readFileSync("./repos.json").toString()
@@ -51,11 +52,13 @@ if (!Array.isArray(repositories) || !Array.isArray(emails)) {
 
   console.log('Starting to commit to "./test-git-repo"');
 
+  process.chdir(TEST_REPO);
+
   for (const commit of sortedCommits) {
-    await git.commit("Another commit", {
-      "--allow-empty": null,
-      "--date": commit.date,
-    });
+    const gitCommand = `GIT_AUTHOR_DATE="${commit.date}" GIT_COMMITTER_DATE="${commit.date}" git commit --allow-empty --no-gpg-sign -m "Another commit"`;
+
+    execSync(gitCommand, { encoding: "utf8" });
+
     process.stdout.write(".");
   }
 
