@@ -1,69 +1,62 @@
-import { execSync } from "child_process";
-import { mkdirSync, readFileSync, rmSync } from "fs";
-import path from "path";
-import * as R from "ramda";
-import { simpleGit } from "simple-git";
-import { getCommitList } from "./getCommitList";
+#!/usr/bin/env ts-node
 
-const { repositories, emails, remote } = JSON.parse(
-	readFileSync("./repos.json").toString(),
-);
+// Run `npm start` to start the program, or hit F5 in VS Code to debug it (see `.vscode/launch.json`)
 
-if (!Array.isArray(repositories) || !Array.isArray(emails)) {
-	console.error(
-		"Expecting a './repos.json' with an array 'repositories' and 'emails'. See 'repos.example.json'",
-	);
-	process.exit(-1);
+import { readFileSync } from "fs";
+import Joi from "joi";
+import { exit } from "process";
+import yargs from "yargs";
+import { error } from "./common";
+import exampleConfig from "./config.example.json";
+import { replicateContributions } from "./replicateContributions";
+
+export interface Config {
+	sourceRepositories: {
+		paths: string[];
+		possibleBranchNames: string[];
+		authorEmails: string[];
+	};
+	contributionsRepository: {
+		path: string;
+		remote: string;
+		includeRepositoryNameInCommits: boolean;
+	};
 }
 
-(async () => {
-	const allCommits = [];
-	for (const repoUrl of repositories) {
-		allCommits.push(...(await getCommitList(repoUrl, emails)));
-	}
+const configSchema = Joi.object<Config>({
+	sourceRepositories: Joi.object({
+		paths: Joi.array().items(Joi.string()).required(),
+		possibleBranchNames: Joi.array().items(Joi.string()).required(),
+		authorEmails: Joi.array().items(Joi.string()).required(),
+	}).required(),
+	contributionsRepository: Joi.object({
+		path: Joi.string().required(),
+		remote: Joi.string(),
+		includeRepositoryNameInCommits: Joi.boolean(),
+	}).required(),
+}).required();
 
-	const sortedCommits = R.sortBy(
-		({ date }) => new Date(date).getTime(),
-		allCommits,
-	);
+const args = yargs
+	.option("config", {
+		alias: "c",
+		type: "string",
+		description: "The path to the JSON configuration file",
+		demandOption: true,
+	})
+	.strict()
+	.usage("Usage: $0 --config=<json-config-file-path>")
+	.example("config file:", JSON.stringify(exampleConfig, undefined, "  "))
+	.help()
+	.parseSync();
 
-	// Useful to show what we've found, try dropping of the author filter and logging it.
-	// console.log(R.uniq(allCommits.map(({ email }) => email)));
+const config = configSchema.validate(
+	JSON.parse(readFileSync(args.config).toString()),
+);
 
-	const TEST_REPO = path.join(__dirname, "./test-git-repo");
-	// delete if it exists
-	try {
-		rmSync(TEST_REPO, { recursive: true });
-	} catch {
-		// we don't mind if it was already missing
-	}
+if (config.error) {
+	console.error(`${error} invalid config file:`);
+	console.error(config.error);
+	exit(1);
+}
 
-	mkdirSync(TEST_REPO);
-
-	const git = simpleGit({
-		baseDir: TEST_REPO,
-	});
-
-	await git.init();
-
-	if (!!remote) {
-		await git.addRemote("origin", remote);
-	}
-
-	console.log('Starting to commit to "./test-git-repo"');
-
-	process.chdir(TEST_REPO);
-
-	for (const commit of sortedCommits) {
-		const gitCommand = `GIT_AUTHOR_DATE="${commit.date}" GIT_COMMITTER_DATE="${commit.date}" git commit --allow-empty --no-gpg-sign -m "Another commit"`;
-
-		execSync(gitCommand, { encoding: "utf8" });
-
-		process.stdout.write(".");
-	}
-
-	console.log();
-	console.log(
-		`Added ${sortedCommits.length} contributions found in ${repositories.length} repositories`,
-	);
-})();
+replicateContributions(config.value);

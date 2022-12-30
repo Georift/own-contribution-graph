@@ -1,38 +1,66 @@
-import { exec } from "child_process";
-import { readFileSync } from "fs";
-import * as tmp from "tmp";
+import { execSync } from "child_process";
+import { basename } from "path";
+import { chdir, cwd, exit } from "process";
+import { error } from "./common";
 
-import { onExit } from "./onExit";
+export interface Commit {
+	authorEmail: string;
+	date: string;
+	repoName: string;
+}
 
-// we need to add some sanitization to these inputs...
-export const getCommitList = async (
-	repo: string,
-	authorEmails: string[] = [],
-) => {
-	// TODO: check the repo before assuming it's just main. Could
-	// be set to master or trunk. How can we detect this?
-	const repoMainBranch = "main";
+export const getCommitList = ({
+	repoPath,
+	possibleBranchNames,
+	authorEmails,
+}: {
+	repoPath: string;
+	possibleBranchNames: string[];
+	authorEmails: string[];
+}): Commit[] => {
+	const repoName = basename(repoPath);
 
-	const filterFlags = authorEmails.map((e) => `--author="${e}"`).join(" ");
+	chdir(repoPath);
 
-	const outputFile = tmp.fileSync();
-	const childProcess = exec(
-		`cd ${repo} && git rev-list ${filterFlags} --format="format:%ae %cI" ${repoMainBranch} > ${outputFile.name}`,
-	);
+	console.info(`- looking for commits in '${cwd()}'`);
 
-	try {
-		await onExit(childProcess);
-	} catch (error) {
-		console.error(`Error while trying to open repo "${repo}"`);
-		return [];
+	const branchName = possibleBranchNames.find((possibleBrancheName) => {
+		try {
+			execSync(
+				`git rev-parse --verify ${possibleBrancheName} > /dev/null 2>&1`,
+			);
+
+			return true;
+		} catch {
+			return false;
+		}
+	});
+
+	if (!branchName) {
+		console.error(`  - ${error} can't find default branch name.`);
+		exit(1);
 	}
 
-	const revListOutput = readFileSync(outputFile.name).toString();
+	const filterFlags = authorEmails
+		.map((authorEmail) => `--author="${authorEmail}"`)
+		.join(" ");
 
-	return revListOutput
+	const revListOutput = execSync(
+		`git rev-list ${filterFlags} --format="format:%ae %cI" ${branchName}`,
+		{ encoding: "utf8" },
+	);
+
+	const commits = revListOutput
 		.split("\n")
 		.filter((s) => !s.startsWith("commit ") && s.trim().length > 0)
 		.map((s) => s.split(" "))
-		.map(([email, date]) => ({ email, date }))
-		.reverse(); // sorting them in ascending order
+		.map(([authorEmail, date]) => ({
+			authorEmail,
+			date,
+			repoName,
+		}));
+
+	console.info(`  - found ${commits.length} commits`);
+
+	return commits;
 };

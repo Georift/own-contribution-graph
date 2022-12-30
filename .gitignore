@@ -2,8 +2,6 @@
 .npmrc
 
 node_modules
-test-git-repo
-repos.json
 
 dist
 
