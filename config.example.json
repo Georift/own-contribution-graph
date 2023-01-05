@@ -1,0 +1,15 @@
+{
+	"sourceRepositories": {
+		"paths": [
+			"<path-to-repo>",
+			"<path-to-directory-containing-multiple-repos>/*"
+		],
+		"possibleBranchNames": ["origin/master", "origin/main"],
+		"authorEmails": ["<email-address>"]
+	},
+	"contributionsRepository": {
+		"path": "<repo-path>",
+		"remote": "<remote-name> <remote-url>",
+		"includeRepositoryNameInCommits": true
+	}
+}
