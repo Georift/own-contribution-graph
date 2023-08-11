@@ -1,11 +1,8 @@
 # `own-contribution-graph`
 
-Say your company doesn't use GitHub, but you still want to continue your
-contribution graph on your GitHub account.
+Say your company doesn't use GitHub, but you still want to continue your contribution graph on your GitHub account.
 
-This tool will scan local repositories, and create a new repository with a
-series of empty commits that replicate your contributions seen in the local
-repositories.
+This tool will scan local repositories, and create a new repository with a series of empty commits that replicate your contributions seen in the local repositories.
 
 ## Usage
 
@@ -50,6 +47,4 @@ owncontributiongraph --config=<json-config-file-path>
 
 Push this repo to GitHub, or anywhere else.
 
-## TODO
-
-- [ ] Output the commit graph as HTML so it can be published on personal websites
+On subsequent runs, only new commits will be added to the contribution repository.
