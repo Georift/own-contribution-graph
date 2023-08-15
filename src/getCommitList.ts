@@ -4,6 +4,7 @@ import { chdir, cwd, exit } from "process";
 import { error } from "./common";
 
 export interface Commit {
+	hash: string;
 	authorEmail: string;
 	date: string;
 	repoName: string;
@@ -46,7 +47,7 @@ export const getCommitList = ({
 		.join(" ");
 
 	const revListOutput = execSync(
-		`git rev-list ${filterFlags} --format="format:%ae %cI" ${branchName}`,
+		`git rev-list ${filterFlags} --format="format:%H %ae %cI" ${branchName}`,
 		{ encoding: "utf8" },
 	);
 
@@ -54,7 +55,8 @@ export const getCommitList = ({
 		.split("\n")
 		.filter((s) => !s.startsWith("commit ") && s.trim().length > 0)
 		.map((s) => s.split(" "))
-		.map(([authorEmail, date]) => ({
+		.map(([hash, authorEmail, date]) => ({
+			hash,
 			authorEmail,
 			date,
 			repoName,
