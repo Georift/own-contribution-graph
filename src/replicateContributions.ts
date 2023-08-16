@@ -148,7 +148,7 @@ const prepareRepo = ({ path, remote }: Config["contributionsRepository"]) => {
  * that do not exist anymore in their original repositories; it doesn't seem very important though
  */
 const createContributionCommits = (
-	{ path, includeRepositoryNameInCommits }: Config["contributionsRepository"],
+	{ includeRepositoryNameInCommits }: Config["contributionsRepository"],
 	commits: Commit[],
 ) => {
 	const existingCommitsOutput = execSync(`git log --format="format:%b"`, {
